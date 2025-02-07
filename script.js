@@ -2,7 +2,7 @@ const generateBtn = document.getElementById("generateBtn");
 const promptInput = document.getElementById("prompt");
 const generatedImage = document.getElementById("generatedImage");
 
-generateBtn.addEventListener("click", () => {
+generateBtn.addEventListener("click", async () => {
   const prompt = promptInput.value;
 
   if (!prompt) {
@@ -10,36 +10,37 @@ generateBtn.addEventListener("click", () => {
     return;
   }
 
-  // Hugging Face API details
+  // API endpoint
   const API_URL = "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4";
-  const API_KEY = "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";
+
+  // Fetch API key from GitHub secrets
+  const API_KEY = process.env.HUGGING_FACE_API_KEY;
 
   // Show loading message
   generatedImage.src = "";
   generatedImage.alt = "Generating image...";
 
   // Make API request
-  fetch(API_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ inputs: prompt })
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.blob();
-    })
-    .then((blob) => {
-      const imageUrl = URL.createObjectURL(blob);
-      generatedImage.src = imageUrl;
-      generatedImage.alt = "Generated Image";
-    })
-    .catch((error) => {
-      console.error("Error:", error);
-      alert("Failed to generate image. Please try again later.");
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ inputs: prompt }),
     });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const imageUrl = URL.createObjectURL(blob);
+    generatedImage.src = imageUrl;
+    generatedImage.alt = "Generated Image";
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Failed to generate image. Please try again later.");
+  }
 });
